@@ -9,17 +9,15 @@ package kafkasystem;
 import KafkaConsoleAPI.KafkaProducerCreator;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.ParseException;
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JFileChooser;
 
 /**
  *
@@ -28,6 +26,7 @@ import javax.swing.JFileChooser;
 public class KafkaSystem {
 
     private File[] inputFiles;
+    private Object ooo = "1234";
     
     
 
@@ -36,6 +35,20 @@ public class KafkaSystem {
      */
     public static void main(String[] args) {
         // TODO code application logic here
+       
+        Properties kafkaProducerProps = new Properties();
+        try {
+            InputStream input = new FileInputStream("var\\KafkaProducer.properties");
+            
+            try {
+                kafkaProducerProps.load(input);
+            } catch (IOException ex) {
+                Logger.getLogger(KafkaProducerCreator.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(KafkaProducerCreator.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
         
         KafkaProducerCreator testProducer = new KafkaProducerCreator();
         KafkaProducerSenderGUI producerGUI = new KafkaProducerSenderGUI();
@@ -45,54 +58,54 @@ public class KafkaSystem {
         //=======================//
         // Create Kafka producer //
         //=======================//
-        testProducer.initKafkaProducer();
+        testProducer.initKafkaProducer(kafkaProducerProps);
         
+        producerGUI.brokerIP.setEditable(false);
+        String ipPort = kafkaProducerProps.getProperty("bootstrap.servers");
+        producerGUI.brokerIP.setText(ipPort.substring(0, ipPort.indexOf(":")));
+        producerGUI.brokerPort.setEditable(false);
+        producerGUI.brokerPort.setText(ipPort.substring(ipPort.indexOf(":")+1, ipPort.length()));
+        producerGUI.topicName.setEditable(false);
+        producerGUI.topicName.setText(kafkaProducerProps.getProperty("topic.name"));
         
         producerGUI.setView();
-        
-        
-        
+
         producerGUI.fileChooserItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 try {
-                    producerGUI.getFilesfromChooserAction(evt);
+                    File[] inputFiles = producerGUI.getFilesfromChooserAction(evt);
+                    kafkaSystem.setFiles(inputFiles);
                 } catch (ParseException ex) {
                     
                 }
             }
         });
         
-        
-        
-        //================//
-        // Read the files //
-        //================//
-        try (BufferedReader br = new BufferedReader(new FileReader("Z:\\WEC_testOracleVersionPerformance\\SECS\\6933FD200.txt"))) {
-            StringBuilder sb = new StringBuilder();
-            String line;
-            try {
-                while ((line = br.readLine()) != null) {
-                    sb.append(line).append("\n");
-                }
-            } catch (IOException ex) {
-                Logger.getLogger(KafkaSystem.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            if (sb != null) {
+        producerGUI.frame.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                System.out.println("Uncomment following to open another window!");
                 try {
-                    testProducer.sendMessage("testTopicAAA", "SECS", sb.toString());
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(KafkaSystem.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (ExecutionException ex) {
+                    java.io.FileWriter fw = new java.io.FileWriter("testOfOutputFile.txt");
+                    fw.write("Uncomment following to open another window!");
+                    fw.close();
+                } catch (IOException ioe) {
+                    ioe.printStackTrace();
+                }
+                e.getWindow().dispose();
+                System.out.println("JFrame Closed!");
+            }
+        });
+        
+        producerGUI.sendMessageButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                try {
+                    producerGUI.sendMessageAction(evt, testProducer, kafkaProducerProps, kafkaSystem.getFiles());
+                } catch (FileNotFoundException ex) {
                     Logger.getLogger(KafkaSystem.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(KafkaSystem.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ioe){
-            
-        }
-
-
+        });
     }
     
     
@@ -103,18 +116,5 @@ public class KafkaSystem {
     public File[] getFiles(){
         return this.inputFiles;
     }
-
-    /*
-    public void getFilesfromChooserAction(java.awt.event.ActionEvent evt) throws ParseException {
-        JFileChooser fc = new JFileChooser();
-        fc.setMultiSelectionEnabled(true);
-
-        int returnValue = fc.showOpenDialog(null);
-        if (returnValue == JFileChooser.APPROVE_OPTION) {
-            File[] inFile = fc.getSelectedFiles();
-            setFiles(inFile);
-        }
-    }
-    */
 
 }
