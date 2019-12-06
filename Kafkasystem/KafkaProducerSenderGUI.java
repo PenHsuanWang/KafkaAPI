@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package Kafkasystem;
+package kafkasystem;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -13,6 +13,7 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.text.ParseException;
+import java.util.Vector;
 import javax.swing.BorderFactory;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -22,6 +23,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 
 /**
  *
@@ -46,6 +48,9 @@ public class KafkaProducerSenderGUI extends JFrame {
     private JMenuBar menubar = new JMenuBar();
     private JMenu menu = new JMenu();
     public JMenuItem fileChooserItem = new JMenuItem();
+    
+    JTextField brokerIP = new JTextField();
+    JTextField brokerPort = new JTextField();
 
     public void setView() {
 
@@ -55,7 +60,6 @@ public class KafkaProducerSenderGUI extends JFrame {
         menubar.add(menu); // add menu into menubar
         frame.add(menubar);
         frame.setJMenuBar(menubar); // set the menubar to the position
-        
         
         frame.setLayout(new GridLayout(1,2,2,3));
         left.setLayout(new GridLayout(3,1,5,2));
@@ -90,17 +94,23 @@ public class KafkaProducerSenderGUI extends JFrame {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 */
+
     public File[] getFilesfromChooserAction(java.awt.event.ActionEvent evt) throws ParseException {
         JFileChooser fc = new JFileChooser();
         fc.setMultiSelectionEnabled(true);
-        
+
         int returnValue = fc.showOpenDialog(null);
         if (returnValue == JFileChooser.APPROVE_OPTION) {
             File[] inFile = fc.getSelectedFiles();
-            System.out.println(inFile.length);
+            String showInFilePath = "";
+            for(int i=0 ; i<inFile.length ; i++){
+                showInFilePath=showInFilePath+inFile[i].getAbsolutePath()+"\n";
+            }
+            showFileInput.setText(showInFilePath);
             return inFile;
         }
         return null;
     }
+
 
 }
