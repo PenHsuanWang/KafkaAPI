@@ -47,7 +47,7 @@ public class KafkaProducerCreator{
         this.producer = new KafkaProducer<String, String>(props);
     }
 
-    public String sendMessage(String topic, String key, String message) throws InterruptedException, ExecutionException {
+    public RecordMetadata sendMessage(String topic, String key, String message) throws InterruptedException, ExecutionException {
         
         ProducerRecord<String, String> recordSynchronously
                 = new ProducerRecord<>(topic, key, message);
@@ -63,14 +63,7 @@ public class KafkaProducerCreator{
         RecordMetadata computedResult = (RecordMetadata) this.producer.send(recordSynchronously).get();
         
         if (computedResult != null) {
-            returnInformation = returnInformation + "Message send successfully :\n";
-            returnInformation = returnInformation + "    Timestamp: "+computedResult.timestamp()+"\n";
-            returnInformation = returnInformation + "    Topic: "+computedResult.topic()+"\n";
-            returnInformation = returnInformation + "    Offset: "+computedResult.offset()+"\n";
-            returnInformation = returnInformation + "    Serialized Value Size: "+computedResult.serializedValueSize()+"\n";
-            
-            return returnInformation;
-            
+            return computedResult;
         } else {
             return null;
         }

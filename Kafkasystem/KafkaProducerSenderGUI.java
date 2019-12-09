@@ -36,6 +36,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.LayoutStyle;
+import org.apache.kafka.clients.producer.RecordMetadata;
 
 /**
  *
@@ -55,8 +56,8 @@ public class KafkaProducerSenderGUI extends JFrame {
     private JScrollPane showsSendingMessage = new JScrollPane();
     private JScrollPane showsCallback = new JScrollPane();
     
-    private JTextArea showFileInput = new JTextArea(5, 25);
-    private JTextArea showSendMessageReply = new JTextArea();
+    public JTextArea showFileInput = new JTextArea(5, 25);
+    public JTextArea showSendMessageReply = new JTextArea();
     
     private JMenuBar menubar = new JMenuBar();
     private JMenu menu = new JMenu();
@@ -71,7 +72,7 @@ public class KafkaProducerSenderGUI extends JFrame {
     public JTextField topicName = new JTextField(15);
     public JButton sendMessageButton = new JButton();
     
-    public void setView() {
+    public void setView(Properties kafkaProducerProps) {
 
         menu.setText("File"); // setting the menu text
         fileChooserItem.setText("Open.."); // setting the menu item text
@@ -151,7 +152,13 @@ public class KafkaProducerSenderGUI extends JFrame {
                         .addContainerGap(90, Short.MAX_VALUE))
         );
 
-
+        brokerIP.setEditable(false);
+        String ipPort = kafkaProducerProps.getProperty("bootstrap.servers");
+        brokerIP.setText(ipPort.substring(0, ipPort.indexOf(":")));
+        brokerPort.setEditable(false);
+        brokerPort.setText(ipPort.substring(ipPort.indexOf(":")+1, ipPort.length()));
+        topicName.setEditable(false);
+        topicName.setText(kafkaProducerProps.getProperty("topic.name"));
         
         //frame.pack();
         frame.setLocationRelativeTo(null);
@@ -164,6 +171,7 @@ public class KafkaProducerSenderGUI extends JFrame {
     }
 */
 
+    /*
     public File[] getFilesfromChooserAction(java.awt.event.ActionEvent evt) throws ParseException {
         JFileChooser fc = new JFileChooser();
         fc.setMultiSelectionEnabled(true);
@@ -180,7 +188,9 @@ public class KafkaProducerSenderGUI extends JFrame {
         }
         return null;
     }
+    */
     
+    /*
     public void sendMessageAction(java.awt.event.ActionEvent evt, KafkaConsoleAPI.KafkaProducerCreator testProducer, Properties kafkaProducerProps, File[] readFiles) throws FileNotFoundException {
         String displayMessageInfo = "";
         if (readFiles == null){
@@ -203,12 +213,18 @@ public class KafkaProducerSenderGUI extends JFrame {
                         long startSendTimestamp = System.currentTimeMillis();
                         displayMessageInfo = displayMessageInfo+"Going to send message from file: "+ readFiles[i].getPath()+" : \n";
                         
-                        String replyMessage = testProducer.sendMessage(kafkaProducerProps.getProperty("topic.name"), kafkaProducerProps.getProperty("message.key") , sb.toString());
+                        RecordMetadata replyRecord = testProducer.sendMessage(kafkaProducerProps.getProperty("topic.name"), kafkaProducerProps.getProperty("message.key") , sb.toString());
                         long finalSendTimestamp = System.currentTimeMillis();
-                        if (replyMessage != null){
-                            displayMessageInfo = displayMessageInfo + replyMessage + "Send message time consumed: "+(finalSendTimestamp - startSendTimestamp) +" miliseconds \n\n";
-                        } else{
-                            displayMessageInfo = displayMessageInfo + "Error! Failed to send message from file: "+ readFiles[i].getPath()+" : \n";
+                        if (replyRecord != null) {
+
+                            displayMessageInfo = displayMessageInfo + "Message send successfully :\n";
+                            displayMessageInfo = displayMessageInfo + "    Timestamp: " + replyRecord.timestamp() + "\n";
+                            displayMessageInfo = displayMessageInfo + "    Topic: " + replyRecord.topic() + "\n";
+                            displayMessageInfo = displayMessageInfo + "    Offset: " + replyRecord.offset() + "\n";
+                            displayMessageInfo = displayMessageInfo + "    Serialized Value Size: " + replyRecord.serializedValueSize() + "\n";
+                            displayMessageInfo = displayMessageInfo + "Send message time consumed: " + (finalSendTimestamp - startSendTimestamp) + " miliseconds \n\n";
+                        } else {
+                            displayMessageInfo = displayMessageInfo + "Error! Failed to send message from file: " + readFiles[i].getPath() + " : \n";
                         }
                     } catch (InterruptedException ex) {
                         Logger.getLogger(KafkaSystem.class.getName()).log(Level.SEVERE, null, ex);
@@ -228,7 +244,7 @@ public class KafkaProducerSenderGUI extends JFrame {
             }
         }
         showSendMessageReply.setText(displayMessageInfo);
-    }
+    }*/
     
     
     //====================================//

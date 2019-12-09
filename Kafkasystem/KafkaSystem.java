@@ -9,15 +9,25 @@ package kafkasystem;
 import KafkaConsoleAPI.KafkaProducerCreator;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.text.ParseException;
+import java.util.HashMap;
 import java.util.Properties;
+import java.util.Vector;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JFileChooser;
+import static kafkasystem.KafkaProducerSenderGUI.showException;
+import org.apache.kafka.clients.producer.RecordMetadata;
 
 /**
  *
@@ -25,10 +35,7 @@ import java.util.logging.Logger;
  */
 public class KafkaSystem {
 
-    private File[] inputFiles;
-    private Object ooo = "1234";
-    
-    
+    private File[] inputFiles;    
 
     /**
      * @param args the command line arguments
@@ -49,31 +56,24 @@ public class KafkaSystem {
             Logger.getLogger(KafkaProducerCreator.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        
         KafkaProducerCreator testProducer = new KafkaProducerCreator();
         KafkaProducerSenderGUI producerGUI = new KafkaProducerSenderGUI();
-        
+
         KafkaSystem kafkaSystem = new KafkaSystem();
+
         
+        Vector<HashMap> stackTestUnit = new Vector<>();
+
         //=======================//
         // Create Kafka producer //
         //=======================//
         testProducer.initKafkaProducer(kafkaProducerProps);
-        
-        producerGUI.brokerIP.setEditable(false);
-        String ipPort = kafkaProducerProps.getProperty("bootstrap.servers");
-        producerGUI.brokerIP.setText(ipPort.substring(0, ipPort.indexOf(":")));
-        producerGUI.brokerPort.setEditable(false);
-        producerGUI.brokerPort.setText(ipPort.substring(ipPort.indexOf(":")+1, ipPort.length()));
-        producerGUI.topicName.setEditable(false);
-        producerGUI.topicName.setText(kafkaProducerProps.getProperty("topic.name"));
-        
-        producerGUI.setView();
+        producerGUI.setView(kafkaProducerProps);
 
         producerGUI.fileChooserItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 try {
-                    File[] inputFiles = producerGUI.getFilesfromChooserAction(evt);
+                    File[] inputFiles = getFilesfromChooserAction(evt, producerGUI);
                     kafkaSystem.setFiles(inputFiles);
                 } catch (ParseException ex) {
                     
@@ -88,6 +88,12 @@ public class KafkaSystem {
                 try {
                     java.io.FileWriter fw = new java.io.FileWriter("testOfOutputFile.txt");
                     fw.write("Uncomment following to open another window!");
+                    
+                    for (HashMap stackTestUnit1 : stackTestUnit) {
+                        System.out.print(Double.parseDouble(stackTestUnit1.get("SerializedValueSize").toString())/(1024*1024)+"MB, spend time: ");
+                        System.out.print(stackTestUnit1.get("SendMesgConsumedTime")+"    ");
+                        System.out.println("Sending speed from producer to Kafka broker:  " + Double.parseDouble(stackTestUnit1.get("SerializedValueSize").toString())/(1024*1024)/Double.parseDouble(stackTestUnit1.get("SendMesgConsumedTime").toString())*Math.pow(10, 6)+" MB/s");
+                    }
                     fw.close();
                 } catch (IOException ioe) {
                     ioe.printStackTrace();
@@ -100,14 +106,16 @@ public class KafkaSystem {
         producerGUI.sendMessageButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 try {
-                    producerGUI.sendMessageAction(evt, testProducer, kafkaProducerProps, kafkaSystem.getFiles());
+                    sendMessageAction(evt, producerGUI, testProducer, kafkaProducerProps, kafkaSystem.getFiles(), stackTestUnit);
                 } catch (FileNotFoundException ex) {
                     Logger.getLogger(KafkaSystem.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         });
     }
-    
+    //=====================//
+    // End of main methods //
+    //=====================//
     
     public void setFiles(File[] inputFiles){
         this.inputFiles = inputFiles;
@@ -115,6 +123,96 @@ public class KafkaSystem {
     
     public File[] getFiles(){
         return this.inputFiles;
+    }
+    
+    
+    //============================//
+    // Action Methods of listener //
+    //============================//
+    
+    public static File[] getFilesfromChooserAction(java.awt.event.ActionEvent evt, KafkaProducerSenderGUI producerGUI) throws ParseException {
+        JFileChooser fc = new JFileChooser();
+        fc.setMultiSelectionEnabled(true);
+
+        int returnValue = fc.showOpenDialog(null);
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            File[] inFile = fc.getSelectedFiles();
+            String showInFilePath = "";
+            for (int i = 0; i < inFile.length; i++) {
+                showInFilePath = showInFilePath + inFile[i].getAbsolutePath() + "\n";
+            }
+            producerGUI.showFileInput.setText(showInFilePath);
+            return inFile;
+        }
+        return null;
+    }
+    
+    
+    
+    public static void sendMessageAction(java.awt.event.ActionEvent evt, KafkaProducerSenderGUI producerGUI, KafkaConsoleAPI.KafkaProducerCreator testProducer, Properties kafkaProducerProps, File[] readFiles, Vector<HashMap> stackTestUnit) throws FileNotFoundException {
+        String displayMessageInfo = "";
+        if (readFiles == null){
+            showException("Selected Files are null", "No files are selected!! \nPlease select file for sending first!!", 2);
+        }
+        HashMap testUnitReturnInfo = new HashMap();
+        for (int i = 0; i < readFiles.length; i++) {
+            try {
+                BufferedReader br = new BufferedReader(new FileReader(readFiles[i]));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                try {
+                    while ((line = br.readLine()) != null) {
+                        sb.append(line).append("\n");
+                    }
+                } catch (IOException ex) {
+                    Logger.getLogger(KafkaSystem.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                if (sb != null) {
+                    try {
+                        long startSendTimestamp = System.currentTimeMillis();
+                        displayMessageInfo = displayMessageInfo+"Going to send message from file: "+ readFiles[i].getPath()+" : \n";
+                        
+                        RecordMetadata replyRecord = testProducer.sendMessage(kafkaProducerProps.getProperty("topic.name"), kafkaProducerProps.getProperty("message.key") , sb.toString());
+                        long finalSendTimestamp = System.currentTimeMillis();
+                        if (replyRecord != null) {
+
+                            displayMessageInfo = displayMessageInfo + "Message send successfully :\n";
+                            displayMessageInfo = displayMessageInfo + "    Timestamp: " + replyRecord.timestamp() + "\n";
+                            displayMessageInfo = displayMessageInfo + "    Topic: " + replyRecord.topic() + "\n";
+                            displayMessageInfo = displayMessageInfo + "    Offset: " + replyRecord.offset() + "\n";
+                            displayMessageInfo = displayMessageInfo + "    Serialized Value Size: " + replyRecord.serializedValueSize() + "\n";
+                            displayMessageInfo = displayMessageInfo + "Send message time consumed: " + (finalSendTimestamp - startSendTimestamp) + " miliseconds \n\n";
+                            
+                            testUnitReturnInfo.put("TestFile", "readFiles[i].getPath()");
+                            testUnitReturnInfo.put("Timestamp", replyRecord.timestamp());
+                            testUnitReturnInfo.put("Topic", replyRecord.topic());
+                            testUnitReturnInfo.put("Offset", replyRecord.offset());
+                            testUnitReturnInfo.put("SerializedValueSize", replyRecord.serializedValueSize());
+                            testUnitReturnInfo.put("SendMesgConsumedTime", finalSendTimestamp-startSendTimestamp);
+                            
+                            stackTestUnit.add(testUnitReturnInfo);
+                        
+                        } else {
+                            displayMessageInfo = displayMessageInfo + "Error! Failed to send message from file: " + readFiles[i].getPath() + " : \n";
+                        }
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(KafkaSystem.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (ExecutionException ex) {
+                        StringWriter sw = new StringWriter();
+                        PrintWriter pw = new PrintWriter(sw);
+                        ex.printStackTrace(pw);
+                        
+                        displayMessageInfo = displayMessageInfo + "Error! Failed to send message from file: "+ readFiles[i].getPath()+" : \n";
+                        displayMessageInfo = displayMessageInfo + sw.toString();
+                    } catch (org.apache.kafka.common.errors.RecordTooLargeException recoardLardeEx) {
+
+                    }
+                }
+            } catch (IOException ioe) {
+
+            }
+        }
+        producerGUI.showSendMessageReply.setText(displayMessageInfo);
     }
 
 }
