@@ -43,10 +43,11 @@ public class KafkaProducerCreator{
     }
 
 
-    public void initKafkaProducer(Properties props){
+    public void initKafkaProducer(Properties props) throws Exception{
         this.producer = new KafkaProducer<String, String>(props);
     }
 
+    
     public RecordMetadata sendMessage(String topic, String key, String message) throws InterruptedException, ExecutionException {
         
         ProducerRecord<String, String> recordSynchronously

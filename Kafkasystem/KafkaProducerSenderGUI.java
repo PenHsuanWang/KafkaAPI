@@ -8,23 +8,16 @@ package kafkasystem;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.text.ParseException;
+import java.awt.Insets;
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.BorderFactory;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
-import javax.swing.JFileChooser;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -36,7 +29,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.LayoutStyle;
-import org.apache.kafka.clients.producer.RecordMetadata;
 
 /**
  *
@@ -50,7 +42,7 @@ public class KafkaProducerSenderGUI extends JFrame {
     private JScrollPane right = new JScrollPane();
     private JScrollPane top = new JScrollPane();
     private JPanel middle = new JPanel();
-    private JPanel bottom = new JPanel();
+    private JScrollPane bottom = new JScrollPane();
     
     private JScrollPane listFSelectedFiles = new JScrollPane();
     private JScrollPane showsSendingMessage = new JScrollPane();
@@ -58,6 +50,7 @@ public class KafkaProducerSenderGUI extends JFrame {
     
     public JTextArea showFileInput = new JTextArea(5, 25);
     public JTextArea showSendMessageReply = new JTextArea();
+    public JTextArea showProducerDetails = new JTextArea();
     
     private JMenuBar menubar = new JMenuBar();
     private JMenu menu = new JMenu();
@@ -70,7 +63,13 @@ public class KafkaProducerSenderGUI extends JFrame {
     public JTextField brokerIP = new JTextField(15);
     public JTextField brokerPort = new JTextField(15);
     public JTextField topicName = new JTextField(15);
-    public JButton sendMessageButton = new JButton();
+    
+    public JButton setProducerPropertiesManually = new JButton();
+    public JCheckBox performProducerAIP = new JCheckBox();
+    
+    
+    public JButton sendGeneralMessageButton = new JButton();
+    public JButton sendWecDocMessageButton = new JButton();
     
     public void setView(Properties kafkaProducerProps) {
 
@@ -82,17 +81,41 @@ public class KafkaProducerSenderGUI extends JFrame {
         frame.setJMenuBar(menubar); // set the menubar to the position
         
         frame.setLayout(new GridLayout(1,2,2,3));
-        left.setLayout(new GridLayout(3,1,5,2));
+        //left.setLayout(new GridLayout(3,1,5,2));
+        left.setLayout(new GridBagLayout());
         left.setBorder(BorderFactory.createLineBorder(Color.black));
         right.setBorder(BorderFactory.createLineBorder(Color.black));
 
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill = GridBagConstraints.HORIZONTAL;
+
+        c.gridx = 0;
+        c.gridy = 2;
+        c.weighty = 1.5;
+        c.insets = new Insets(1,1,1,1);
+        c.fill = GridBagConstraints.BOTH;
+        left.add(top, c);
+        c.gridx = 0;
+        c.gridy = 0;
+        c.weighty = 0;
+        left.add(middle, c);
+        c.gridx = 0;
+        c.gridy = 1;
+        c.weighty = 1;
+        left.add(bottom, c);
+        
         top.setBorder(BorderFactory.createLineBorder(Color.black));
         middle.setBorder(BorderFactory.createLineBorder(Color.black));
+        middle.setSize(WIDTH, 400);
         bottom.setBorder(BorderFactory.createLineBorder(Color.black));
         
         top.add(showFileInput);
         showFileInput.setEditable(false);
         top.setViewportView(showFileInput);
+        
+        bottom.add(showProducerDetails);
+        showProducerDetails.setEditable(false);
+        bottom.setViewportView(showProducerDetails);
         
         right.add(showSendMessageReply);
         showSendMessageReply.setEditable(false);
@@ -100,9 +123,10 @@ public class KafkaProducerSenderGUI extends JFrame {
         
         frame.getContentPane().add(left, BorderLayout.WEST);
         frame.getContentPane().add(right, BorderLayout.EAST);
-        left.add(top, BorderLayout.NORTH);
-        left.add(middle, BorderLayout.CENTER);
-        left.add(bottom, BorderLayout.SOUTH);
+        //left.add(top, BorderLayout.NORTH);
+        //left.add(top, c0);
+        //left.add(middle, c1);
+        //left.add(bottom, c2);
         frame.setBounds(0, 0, 800, 600);
         //frame.setLayout(new BorderLayout());
 
@@ -112,7 +136,11 @@ public class KafkaProducerSenderGUI extends JFrame {
         // TextField and bottum's group layout //
         // Of Broker setting for send message  //
         //=====================================//
-        sendMessageButton.setText("Send Message");
+        setProducerPropertiesManually.setText("Setting properties");
+        performProducerAIP.setText("Perfor Producer");
+        
+        sendGeneralMessageButton.setText("Send By Producer API");
+        sendWecDocMessageButton.setText("Send By WecTransport");
         GroupLayout displayParsingInfoPanelLayout = new GroupLayout(middle);
         middle.setLayout(displayParsingInfoPanelLayout);
         displayParsingInfoPanelLayout.setHorizontalGroup(
@@ -120,21 +148,29 @@ public class KafkaProducerSenderGUI extends JFrame {
                 .addGroup(GroupLayout.Alignment.TRAILING, displayParsingInfoPanelLayout.createSequentialGroup()
                         .addGap(15, 15, 15)
                         .addGroup(displayParsingInfoPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                .addComponent(setProducerPropertiesManually)
                                 .addComponent(lableBrokerIP)
                                 .addComponent(lableBrokerPort)
-                                .addComponent(lableTopicName))
+                                .addComponent(lableTopicName)
+                                .addComponent(sendGeneralMessageButton))
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 34, Short.MAX_VALUE)
                         .addGroup(displayParsingInfoPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                .addComponent(performProducerAIP)
                                 .addComponent(brokerIP, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                                 .addComponent(brokerPort, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                                 .addComponent(topicName, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                                .addComponent(sendMessageButton, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+                                .addComponent(sendWecDocMessageButton, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
                         .addGap(23, 23, 23))
         );
         displayParsingInfoPanelLayout.setVerticalGroup(
                 displayParsingInfoPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
                 .addGroup(displayParsingInfoPanelLayout.createSequentialGroup()
-                        .addGap(20, 20, 20)
+                        .addGap(15, 15, 15)
+                        .addGroup(displayParsingInfoPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                .addComponent(performProducerAIP, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                .addComponent(setProducerPropertiesManually))
+                        .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+                        
                         .addGroup(displayParsingInfoPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                                 .addComponent(brokerIP, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                                 .addComponent(lableBrokerIP))
@@ -148,23 +184,67 @@ public class KafkaProducerSenderGUI extends JFrame {
                                 .addComponent(lableTopicName))
                         .addGap(20)
                         .addGroup(displayParsingInfoPanelLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-                                .addComponent(sendMessageButton, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+                                .addComponent(sendGeneralMessageButton, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                .addComponent(sendWecDocMessageButton, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
                         .addContainerGap(90, Short.MAX_VALUE))
         );
 
-        brokerIP.setEditable(false);
-        String ipPort = kafkaProducerProps.getProperty("bootstrap.servers");
-        brokerIP.setText(ipPort.substring(0, ipPort.indexOf(":")));
-        brokerPort.setEditable(false);
-        brokerPort.setText(ipPort.substring(ipPort.indexOf(":")+1, ipPort.length()));
-        topicName.setEditable(false);
-        topicName.setText(kafkaProducerProps.getProperty("topic.name"));
+        //=============================================================//
+        // Setting Producer API from properties setting file           //
+        // If the properties setting file do not provide properties,   //
+        // Please setting broker IP, port, and the topic going to send //
+        //=============================================================//
         
+
         //frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
+    
+    public void setProducerPropertiesTextBoxFromFile(Properties kafkaProducerProps) {
+        try {
+            String ipPort = kafkaProducerProps.getProperty("bootstrap.servers");
+            brokerIP.setText(ipPort.substring(0, ipPort.indexOf(":")));
+            brokerPort.setText(ipPort.substring(ipPort.indexOf(":") + 1, ipPort.length()));
+            topicName.setText(kafkaProducerProps.getProperty("topic.name"));
+            brokerIP.setEditable(false);
+            brokerPort.setEditable(false);
+            topicName.setEditable(false);
+
+        } catch (Exception ex) {
+            brokerIP.setText("please provide Kafka broker's IP");
+            brokerPort.setText("please provide Kafka broker's port");
+            topicName.setText("please provide Topic Name");
+            brokerIP.setEditable(true);
+            brokerPort.setEditable(true);
+            topicName.setEditable(true);
+            performProducerAIP.setSelected(false);
+        }
+    }
+    
+    public void resetProducerPropertiesTextBox() {
+        brokerIP.setText("input Kafka broker's IP");
+        brokerPort.setText("input Kafka broker's port");
+        topicName.setText("input Topic Name");
+        brokerIP.setEditable(true);
+        brokerPort.setEditable(true);
+        topicName.setEditable(true);
+        performProducerAIP.setSelected(false);
+    }
+    
+    
+    public void setProducerRunningInfoFromPropertiesFile(Properties kafkaProducerProps) {
+        String ipPort = kafkaProducerProps.getProperty("bootstrap.servers");
+        showProducerDetails.setText(
+                "Kafka producer API created successfully! \n"
+                + "  producer connected to kafka broker: \n"
+                + "  ip:    " + ipPort.substring(0, ipPort.indexOf(":")) + "\n"
+                + "  port:  " + ipPort.substring(ipPort.indexOf(":") + 1, ipPort.length()) + "\n"
+                + "  topic: " + kafkaProducerProps.getProperty("topic.name")
+        );
+    }
+    
 /*
     void fileChooserActionPerformed(ActionEvent evt) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
@@ -246,6 +326,7 @@ public class KafkaProducerSenderGUI extends JFrame {
         showSendMessageReply.setText(displayMessageInfo);
     }*/
     
+
     
     //====================================//
     // Design of exception message dialog //
