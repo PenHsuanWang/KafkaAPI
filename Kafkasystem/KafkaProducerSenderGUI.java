@@ -8,13 +8,13 @@ package kafkasystem;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.util.Properties;
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -25,10 +25,12 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.LayoutStyle;
+import javax.swing.SwingConstants;
 
 /**
  *
@@ -41,6 +43,7 @@ public class KafkaProducerSenderGUI extends JFrame {
     private JPanel left = new JPanel();
     private JScrollPane right = new JScrollPane();
     private JScrollPane top = new JScrollPane();
+    private JPanel panelProducerTypeSet = new JPanel();
     private JPanel middle = new JPanel();
     private JScrollPane bottom = new JScrollPane();
     
@@ -64,11 +67,15 @@ public class KafkaProducerSenderGUI extends JFrame {
     public JTextField brokerPort = new JTextField(15);
     public JTextField topicName = new JTextField(15);
     
+    private ButtonGroup producerTypeGroup = new ButtonGroup();
+    public JRadioButton radioButtonKafkaProducerAIP = new JRadioButton();
+    public JRadioButton radioButtonWECFramework = new JRadioButton();
+    
     public JButton setProducerPropertiesManually = new JButton();
     public JCheckBox performProducerAIP = new JCheckBox();
     
     
-    public JButton sendGeneralMessageButton = new JButton();
+    public JButton sendMessageButton = new JButton();
     public JButton sendWecDocMessageButton = new JButton();
     
     public void setView(Properties kafkaProducerProps) {
@@ -90,21 +97,42 @@ public class KafkaProducerSenderGUI extends JFrame {
         c.fill = GridBagConstraints.HORIZONTAL;
 
         c.gridx = 0;
-        c.gridy = 2;
+        c.gridy = 3;
         c.weighty = 1.5;
+        //c.gridheight = 2;
         c.insets = new Insets(1,1,1,1);
         c.fill = GridBagConstraints.BOTH;
         left.add(top, c);
         c.gridx = 0;
         c.gridy = 0;
+        //c.gridheight = 2;
         c.weighty = 0;
-        left.add(middle, c);
+        left.add(panelProducerTypeSet, c);
         c.gridx = 0;
         c.gridy = 1;
+        //c.gridheight = 2;
+        left.add(middle, c);
+        c.gridx = 0;
+        c.gridy = 2;
+        //c.gridheight = 2;
         c.weighty = 1;
         left.add(bottom, c);
         
+        producerTypeGroup.add(radioButtonKafkaProducerAIP);
+        radioButtonKafkaProducerAIP.setHorizontalAlignment(SwingConstants.LEFT);
+        radioButtonKafkaProducerAIP.setText("General Kafka Producer");
+        
+        producerTypeGroup.add(radioButtonWECFramework);
+        radioButtonWECFramework.setHorizontalAlignment(SwingConstants.LEFT);
+        radioButtonWECFramework.setText("General Kafka Producer");
+
+        panelProducerTypeSet.add(radioButtonKafkaProducerAIP);
+        panelProducerTypeSet.add(radioButtonWECFramework);
+        //radioButtonKafkaProducerAIP.setSelected(true);
+        radioButtonWECFramework.setSelected(true);
+        
         top.setBorder(BorderFactory.createLineBorder(Color.black));
+        panelProducerTypeSet.setBorder(BorderFactory.createLineBorder(Color.black));
         middle.setBorder(BorderFactory.createLineBorder(Color.black));
         middle.setSize(WIDTH, 400);
         bottom.setBorder(BorderFactory.createLineBorder(Color.black));
@@ -139,8 +167,8 @@ public class KafkaProducerSenderGUI extends JFrame {
         setProducerPropertiesManually.setText("Setting properties");
         performProducerAIP.setText("Perfor Producer");
         
-        sendGeneralMessageButton.setText("Send By Producer API");
-        sendWecDocMessageButton.setText("Send By WecTransport");
+        sendMessageButton.setText("Send Message");
+        sendWecDocMessageButton.setText("Batch Sending");
         GroupLayout displayParsingInfoPanelLayout = new GroupLayout(middle);
         middle.setLayout(displayParsingInfoPanelLayout);
         displayParsingInfoPanelLayout.setHorizontalGroup(
@@ -152,7 +180,7 @@ public class KafkaProducerSenderGUI extends JFrame {
                                 .addComponent(lableBrokerIP)
                                 .addComponent(lableBrokerPort)
                                 .addComponent(lableTopicName)
-                                .addComponent(sendGeneralMessageButton))
+                                .addComponent(sendMessageButton))
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 34, Short.MAX_VALUE)
                         .addGroup(displayParsingInfoPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
                                 .addComponent(performProducerAIP)
@@ -160,7 +188,7 @@ public class KafkaProducerSenderGUI extends JFrame {
                                 .addComponent(brokerPort, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                                 .addComponent(topicName, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                                 .addComponent(sendWecDocMessageButton, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-                        .addGap(23, 23, 23))
+                        .addGap(10))
         );
         displayParsingInfoPanelLayout.setVerticalGroup(
                 displayParsingInfoPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
@@ -182,11 +210,11 @@ public class KafkaProducerSenderGUI extends JFrame {
                         .addGroup(displayParsingInfoPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                                 .addComponent(topicName, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                                 .addComponent(lableTopicName))
-                        .addGap(20)
+                        .addGap(10)
                         .addGroup(displayParsingInfoPanelLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-                                .addComponent(sendGeneralMessageButton, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                .addComponent(sendMessageButton, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                                 .addComponent(sendWecDocMessageButton, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-                        .addContainerGap(90, Short.MAX_VALUE))
+                        .addContainerGap(20, Short.MAX_VALUE))
         );
 
         //=============================================================//
@@ -245,96 +273,10 @@ public class KafkaProducerSenderGUI extends JFrame {
         );
     }
     
-/*
-    void fileChooserActionPerformed(ActionEvent evt) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-*/
-
-    /*
-    public File[] getFilesfromChooserAction(java.awt.event.ActionEvent evt) throws ParseException {
-        JFileChooser fc = new JFileChooser();
-        fc.setMultiSelectionEnabled(true);
-
-        int returnValue = fc.showOpenDialog(null);
-        if (returnValue == JFileChooser.APPROVE_OPTION) {
-            File[] inFile = fc.getSelectedFiles();
-            String showInFilePath = "";
-            for(int i=0 ; i<inFile.length ; i++){
-                showInFilePath=showInFilePath+inFile[i].getAbsolutePath()+"\n";
-            }
-            showFileInput.setText(showInFilePath);
-            return inFile;
-        }
-        return null;
-    }
-    */
-    
-    /*
-    public void sendMessageAction(java.awt.event.ActionEvent evt, KafkaConsoleAPI.KafkaProducerCreator testProducer, Properties kafkaProducerProps, File[] readFiles) throws FileNotFoundException {
-        String displayMessageInfo = "";
-        if (readFiles == null){
-            showException("Selected Files are null", "No files are selected!! \nPlease select file for sending first!!", 2);
-        }
-        for (int i = 0; i < readFiles.length; i++) {
-            try {
-                BufferedReader br = new BufferedReader(new FileReader(readFiles[i]));
-                StringBuilder sb = new StringBuilder();
-                String line;
-                try {
-                    while ((line = br.readLine()) != null) {
-                        sb.append(line).append("\n");
-                    }
-                } catch (IOException ex) {
-                    Logger.getLogger(KafkaSystem.class.getName()).log(Level.SEVERE, null, ex);
-                }
-                if (sb != null) {
-                    try {
-                        long startSendTimestamp = System.currentTimeMillis();
-                        displayMessageInfo = displayMessageInfo+"Going to send message from file: "+ readFiles[i].getPath()+" : \n";
-                        
-                        RecordMetadata replyRecord = testProducer.sendMessage(kafkaProducerProps.getProperty("topic.name"), kafkaProducerProps.getProperty("message.key") , sb.toString());
-                        long finalSendTimestamp = System.currentTimeMillis();
-                        if (replyRecord != null) {
-
-                            displayMessageInfo = displayMessageInfo + "Message send successfully :\n";
-                            displayMessageInfo = displayMessageInfo + "    Timestamp: " + replyRecord.timestamp() + "\n";
-                            displayMessageInfo = displayMessageInfo + "    Topic: " + replyRecord.topic() + "\n";
-                            displayMessageInfo = displayMessageInfo + "    Offset: " + replyRecord.offset() + "\n";
-                            displayMessageInfo = displayMessageInfo + "    Serialized Value Size: " + replyRecord.serializedValueSize() + "\n";
-                            displayMessageInfo = displayMessageInfo + "Send message time consumed: " + (finalSendTimestamp - startSendTimestamp) + " miliseconds \n\n";
-                        } else {
-                            displayMessageInfo = displayMessageInfo + "Error! Failed to send message from file: " + readFiles[i].getPath() + " : \n";
-                        }
-                    } catch (InterruptedException ex) {
-                        Logger.getLogger(KafkaSystem.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (ExecutionException ex) {
-                        StringWriter sw = new StringWriter();
-                        PrintWriter pw = new PrintWriter(sw);
-                        ex.printStackTrace(pw);
-                        
-                        displayMessageInfo = displayMessageInfo + "Error! Failed to send message from file: "+ readFiles[i].getPath()+" : \n";
-                        displayMessageInfo = displayMessageInfo + sw.toString();
-                    } catch (org.apache.kafka.common.errors.RecordTooLargeException recoardLardeEx) {
-
-                    }
-                }
-            } catch (IOException ioe) {
-
-            }
-        }
-        showSendMessageReply.setText(displayMessageInfo);
-    }*/
-    
-
-    
     //====================================//
     // Design of exception message dialog //
     //====================================//
     public static void showException(String title, String content, int type) {
         JOptionPane.showMessageDialog(frame, content, title, type);
-    }
-    
-    
-
+    }    
 }
