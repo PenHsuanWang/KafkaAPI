@@ -5,15 +5,8 @@
  */
 package KafkaConsoleAPI;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -42,10 +35,15 @@ public class KafkaProducerCreator{
         }
     }
 
-
     public void initKafkaProducer(Properties props) throws Exception{
         this.producer = new KafkaProducer<String, String>(props);
     }
+    
+    public void terminatedKafkaProducer(){
+        this.producer.flush();
+        this.producer.close();
+    }
+    
 
     
     public RecordMetadata sendMessage(String topic, String key, String message) throws InterruptedException, ExecutionException {

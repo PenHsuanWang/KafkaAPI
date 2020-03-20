@@ -6,6 +6,8 @@
 
 package kafkasystem;
 
+import ProducerCreator.KafkaProducer;
+import ProducerCreator.Producer;
 import SelfDefinedException.ProducerException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -18,11 +20,13 @@ import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.Vector;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import static kafkasystem.KafkaProducerSenderGUI.showException;
-import ProducerCreator.Producer;
+
 
 /**
  *
@@ -33,7 +37,7 @@ public class KafkaSystem {
     private File[] inputFiles;    
     
     private KafkaProducerSenderGUI producerGUI = new KafkaProducerSenderGUI();
-    private Producer producerAIP;
+    private Producer producerAPI;
     
     private static int sendingTimes = 1;
     private static int batchSendingInterval = 100; // milisecond
@@ -74,11 +78,11 @@ public class KafkaSystem {
         //=================//
         // Create Producer //
         //=================//
-        kafkaSystem.producerAIP = null;
+        kafkaSystem.producerAPI = null;
         if (kafkaSystem.producerGUI.radioButtonKafkaProducerAIP.isSelected()) {
-            kafkaSystem.producerAIP = new ProducerCreator.KafkaProducer();
+            kafkaSystem.producerAPI = new ProducerCreator.KafkaProducer();
         } else {
-            kafkaSystem.producerAIP = new ProducerCreator.WecTransport();
+            kafkaSystem.producerAPI = new ProducerCreator.WecTransport();
         }
         
         Vector<HashMap> stackTestUnit = new Vector<>();
@@ -88,12 +92,12 @@ public class KafkaSystem {
         //==========================================================================//
         try {
             kafkaSystem.producerGUI.resetProducerPropertiesTextBox();
-            kafkaSystem.producerAIP.initProperties(kafkaProducerProps);
+            kafkaSystem.producerAPI.initProperties(kafkaProducerProps);
             try{
-                kafkaSystem.producerAIP.initProducer();
+                kafkaSystem.producerAPI.initProducer();
             } catch(ProducerException producerEx){
                 kafkaSystem.producerGUI.showProducerDetails.setText(producerEx.getErrorMessage());
-                kafkaSystem.producerAIP.terminatedProducer();
+                kafkaSystem.producerAPI.terminatedProducer();
             }
             kafkaSystem.producerGUI.setProducerPropertiesTextBoxFromFile(kafkaProducerProps);
             kafkaSystem.producerGUI.setProducerRunningInfoFromPropertiesFile(kafkaProducerProps);
@@ -102,7 +106,7 @@ public class KafkaSystem {
             kafkaSystem.producerGUI.resetProducerPropertiesTextBox();
             kafkaSystem.producerGUI.showProducerDetails.setText("Fail to create Producer! \n check properties setting!");
             kafkaSystem.producerGUI.performProducerAIP.setSelected(false);
-            kafkaSystem.producerAIP.terminatedProducer();
+            kafkaSystem.producerAPI.terminatedProducer();
         }
         //========================================================//
         // If fail to reading properties files to create producer //
@@ -130,7 +134,7 @@ public class KafkaSystem {
         //==========================//
         kafkaSystem.producerGUI.setProducerPropertiesManually.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                setProducerPropertiesAction(evt, kafkaSystem.producerGUI, kafkaSystem.producerAIP);
+                setProducerPropertiesAction(evt, kafkaSystem.producerGUI, kafkaSystem.producerAPI);
             }
         });
         
@@ -152,7 +156,7 @@ public class KafkaSystem {
         //=====================================//
         kafkaSystem.producerGUI.performProducerAIP.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                runningProducerCheckBoxAction(evt, kafkaSystem.producerGUI, kafkaSystem.producerAIP);
+                runningProducerCheckBoxAction(evt, kafkaSystem.producerGUI, kafkaSystem.producerAPI);
             }
         });
         
@@ -175,7 +179,7 @@ public class KafkaSystem {
                     java.io.FileWriter fw = new java.io.FileWriter("testOfOutputFile.txt");
                     //fw.write("Uncomment following to open another window!");
                     
-                    for (HashMap stackTestUnit1 : kafkaSystem.producerAIP.getStackTestUnit()) {
+                    for (HashMap stackTestUnit1 : kafkaSystem.producerAPI.getStackTestUnit()) {
                         fw.write(Double.parseDouble(stackTestUnit1.get("SerializedValueSize").toString())/(1024*1024)+"MB, spend time: ");
                         fw.write(stackTestUnit1.get("SendMesgConsumedTime")+"    ");
                         fw.write("Sending speed from producer to Kafka broker:  " + Double.parseDouble(stackTestUnit1.get("SerializedValueSize").toString())/(1024*1024)/Double.parseDouble(stackTestUnit1.get("SendMesgConsumedTime").toString())*Math.pow(10, 3)+" MB/s \n");
@@ -192,7 +196,7 @@ public class KafkaSystem {
         kafkaSystem.producerGUI.sendMessageButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 try {
-                    sendMessageAction(evt, kafkaSystem.producerGUI, kafkaSystem.producerAIP, kafkaSystem.getFiles());
+                    sendMessageAction(evt, kafkaSystem.producerGUI, kafkaSystem.producerAPI, kafkaSystem.getFiles());
                 } catch (FileNotFoundException ex) {
                     Logger.getLogger(KafkaSystem.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -227,7 +231,7 @@ public class KafkaSystem {
         producerGUI.resetProducerPropertiesTextBox();
         producer.terminatedProducer();
         producerGUI.performProducerAIP.setSelected(false);
-        producerGUI.showProducerDetails.setText("Stop current producer, recreate producer AIP!! \b");
+        producerGUI.showProducerDetails.setText("Stop current producer, recreate producer API!! \b");
     }
     
     public static void runningProducerCheckBoxAction(java.awt.event.ActionEvent evt, KafkaProducerSenderGUI producerGUI, ProducerCreator.Producer producer){
@@ -241,12 +245,18 @@ public class KafkaSystem {
         manuallySettingKafkaProducerProps.setProperty("message.key", "SECS");
         
         try {
-            producer.terminatedProducer();
+            //producer.terminatedProducer();
             producer.initProperties(manuallySettingKafkaProducerProps);
             try{
                 producer.initProducer();
             } catch (ProducerException producerEx){
                 producerGUI.showProducerDetails.setText(producerEx.getErrorMessage());
+            } catch (Exception ex) {
+                System.out.println("Can not create producer, please check properties setting!");
+                //producerGUI.resetProducerPropertiesTextBox();
+                producerGUI.performProducerAIP.setSelected(false);
+                producerGUI.showProducerDetails.setText(" Try to create producer but FAILED\n Please check the properties setting! \n");
+                return;
             }
             producerGUI.setProducerPropertiesTextBoxFromFile(manuallySettingKafkaProducerProps);
             producerGUI.setProducerRunningInfoFromPropertiesFile(manuallySettingKafkaProducerProps);
@@ -263,17 +273,17 @@ public class KafkaSystem {
     }
     
     public void recreateProducerChangeType(java.awt.event.ActionEvent evt, Properties props){
-        this.producerAIP.terminatedProducer();
-        this.producerAIP = null;
+        this.producerAPI.terminatedProducer();
+        this.producerAPI = null;
         if(this.producerGUI.radioButtonWECFramework.isSelected()){
-            this.producerAIP = (ProducerCreator.WecTransport) new ProducerCreator.WecTransport();
+            this.producerAPI = (ProducerCreator.WecTransport) new ProducerCreator.WecTransport();
         } else if (this.producerGUI.radioButtonKafkaProducerAIP.isSelected()){
-            this.producerAIP = (ProducerCreator.KafkaProducer)new ProducerCreator.KafkaProducer();
+            this.producerAPI = (ProducerCreator.KafkaProducer)new ProducerCreator.KafkaProducer();
         }
-        this.producerAIP.initProperties(props);
+        this.producerAPI.initProperties(props);
         try {
-            this.producerAIP.initProducer();
-            System.out.println(this.producerAIP.getProducerType());
+            this.producerAPI.initProducer();
+            System.out.println(this.producerAPI.getProducerType());
         } catch (ProducerException ex) {
             this.producerGUI.showProducerDetails.setText(ex.getErrorMessage());
         }
@@ -302,17 +312,27 @@ public class KafkaSystem {
             showException("Selected Files are null", "No files are selected!! \nPlease select file for sending first!!", 2);
         }
         int iCount = 0;
-        while (iCount < KafkaSystem.sendingTimes) {
-            for (int i = 0; i < readFiles.length; i++) {
-                testProducer.send(readFiles[i]);
+        try {
+            while (iCount < KafkaSystem.sendingTimes) {
+                for (int i = 0; i < readFiles.length; i++) {
+                    testProducer.send(readFiles[i]);
+                }
+                producerGUI.showSendMessageReply.setText(testProducer.getSendingInfo());
+                iCount++;
+                try {
+                    Thread.sleep(KafkaSystem.batchSendingInterval);
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(KafkaSystem.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
-            producerGUI.showSendMessageReply.setText(testProducer.getSendingInfo());
-            iCount++;
-            try {
-                Thread.sleep(KafkaSystem.batchSendingInterval);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(KafkaSystem.class.getName()).log(Level.SEVERE, null, ex);
-            }
+        } catch (InterruptedException ex) {
+            Logger.getLogger(KafkaProducer.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ExecutionException ex) {
+            //Logger.getLogger(KafkaProducer.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Sending message Timeout! please check the status of broker which producer sending, and check ip/port setting is correct!");
+            JOptionPane.showMessageDialog(null, ex, "Sending Timeuut", JOptionPane.WARNING_MESSAGE);
+        } catch (Exception ex) {
+            Logger.getLogger(KafkaProducer.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 }

@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.Vector;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import kafkasystem.KafkaSystem;
@@ -88,7 +89,7 @@ public abstract class Producer {
     // Send message                                        //
     // The Sending way is dufferent in two different cases //
     //=====================================================//
-    public abstract void send(File inputFile); 
+    public abstract void send(File inputFile) throws InterruptedException, ExecutionException, Exception; 
     
     public abstract String getProducerType();
     

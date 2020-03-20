@@ -9,8 +9,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -48,13 +46,17 @@ public class KafkaProducer extends Producer {
 
     @Override
     public void terminatedProducer() {
-        this.producer.flush();
-        this.producer.close();
+        try{
+            this.producer.flush();
+            this.producer.close();
+        } catch(Exception IExp){
+            System.out.println("Closing producer failed");
+        }
         this.producer = null;
     }
 
     @Override
-    public void send(File inputFile) {
+    public void send(File inputFile) throws InterruptedException, ExecutionException, Exception {
         HashMap testUnitReturnInfo = new HashMap();
 
         StringBuilder sb = new StringBuilder();
@@ -65,7 +67,6 @@ public class KafkaProducer extends Producer {
         }
 
         String messageToSend = sb.toString();
-        try {
             long startSendTimestamp = System.currentTimeMillis();
             this.replyRecord = sendMessage(messageToSend);
             long finalSendTimestamp = System.currentTimeMillis();
@@ -82,14 +83,6 @@ public class KafkaProducer extends Producer {
                 this.stackTestUnit.add(testUnitReturnInfo);
             } else {
             }
-
-        } catch (InterruptedException ex) {
-            Logger.getLogger(KafkaProducer.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ExecutionException ex) {
-            Logger.getLogger(KafkaProducer.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (Exception ex) {
-            Logger.getLogger(KafkaProducer.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }
     
     @Override
@@ -128,6 +121,7 @@ public class KafkaProducer extends Producer {
         // The .get() will throws InterruptedException and ExecutionException //
         // while the sending message to kafka failed                          //
         //====================================================================//
+        
         RecordMetadata computedResult = (RecordMetadata) this.producer.send(recordSynchronously).get();
 
         if (computedResult != null) {
