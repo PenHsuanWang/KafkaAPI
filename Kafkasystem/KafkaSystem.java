@@ -33,7 +33,7 @@ import static kafkasystem.KafkaProducerSenderGUI.showException;
  * @author willy
  */
 public class KafkaSystem {
-
+    // HiHi
     private File[] inputFiles;    
     
     private KafkaProducerSenderGUI producerGUI = new KafkaProducerSenderGUI();
